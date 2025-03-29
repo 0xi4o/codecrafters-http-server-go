@@ -44,6 +44,12 @@ func main() {
 				os.Exit(1)
 			}
 			request := DeserializeRequest(string(r))
+			err = request.Process(flags)
+			if err != nil {
+				fmt.Println("Error processing request: ", err.Error())
+				c.Close()
+				os.Exit(1)
+			}
 			response := SerializeResponse(request, flags)
 			c.Write([]byte(response))
 			c.Close()
