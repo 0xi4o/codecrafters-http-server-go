@@ -8,8 +8,9 @@ import (
 )
 
 type ResponseHeaders struct {
-	ContentType   string
-	ContentLength int
+	ContentEncoding string
+	ContentLength   int
+	ContentType     string
 }
 
 type Response struct {
@@ -32,6 +33,10 @@ func SerializeResponse(request Request, flags map[string]string) string {
 			Headers: responseHeaders,
 			Body:    body,
 		}
+		if request.Headers.AcceptEncoding == "gzip" {
+			response.Headers.ContentEncoding = request.Headers.AcceptEncoding
+			return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
+		}
 		return fmt.Sprintf("%s %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
 	}
 
@@ -51,14 +56,19 @@ func SerializeResponse(request Request, flags map[string]string) string {
 			}
 			body := string(data)
 			responseHeaders := ResponseHeaders{
-				ContentType:   "application/octet-stream",
-				ContentLength: len(body),
+				ContentEncoding: request.Headers.AcceptEncoding,
+				ContentType:     "application/octet-stream",
+				ContentLength:   len(body),
 			}
 			response := Response{
 				Version: request.Version,
 				Status:  fmt.Sprintf("%d %s", http.StatusOK, "OK"),
 				Headers: responseHeaders,
 				Body:    body,
+			}
+			if request.Headers.AcceptEncoding == "gzip" {
+				response.Headers.ContentEncoding = request.Headers.AcceptEncoding
+				return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
 			}
 			return fmt.Sprintf("%s %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
 		case http.MethodPost:
@@ -73,14 +83,19 @@ func SerializeResponse(request Request, flags map[string]string) string {
 	if match, _ := path.Match("/user-agent", request.Path); match {
 		body := request.Headers.UserAgent
 		responseHeaders := ResponseHeaders{
-			ContentType:   "text/plain",
-			ContentLength: len(body),
+			ContentEncoding: request.Headers.AcceptEncoding,
+			ContentType:     "text/plain",
+			ContentLength:   len(body),
 		}
 		response := Response{
 			Version: request.Version,
 			Status:  fmt.Sprintf("%d %s", http.StatusOK, "OK"),
 			Headers: responseHeaders,
 			Body:    body,
+		}
+		if request.Headers.AcceptEncoding == "gzip" {
+			response.Headers.ContentEncoding = request.Headers.AcceptEncoding
+			return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
 		}
 		return fmt.Sprintf("%s %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
 	}

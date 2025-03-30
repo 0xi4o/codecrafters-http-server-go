@@ -44,6 +44,7 @@ func main() {
 				os.Exit(1)
 			}
 			request := DeserializeRequest(string(r))
+			fmt.Printf("request: %v\n", request)
 			err = request.Process(flags)
 			if err != nil {
 				fmt.Println("Error processing request: ", err.Error())
@@ -51,6 +52,7 @@ func main() {
 				os.Exit(1)
 			}
 			response := SerializeResponse(request, flags)
+			fmt.Printf("response: %v\n", response)
 			c.Write([]byte(response))
 			c.Close()
 		}(*tcpConn)

@@ -10,19 +10,20 @@ import (
 )
 
 type RequestHeaders struct {
-	Host          string
-	UserAgent     string
-	Accept        string
-	ContentLength int
-	ContentType   string
+	ContentLength  int
+	Accept         string
+	AcceptEncoding string
+	ContentType    string
+	Host           string
+	UserAgent      string
 }
 
 type Request struct {
 	Method  string
 	Path    string
 	Version string
-	Headers RequestHeaders
 	Body    string
+	Headers RequestHeaders
 }
 
 func parseHeaders(headers []string) RequestHeaders {
@@ -30,16 +31,18 @@ func parseHeaders(headers []string) RequestHeaders {
 	for _, header := range headers {
 		parts := strings.Split(header, ": ")
 		switch parts[0] {
-		case "Host":
-			requestHeaders.Host = parts[1]
-		case "User-Agent":
-			requestHeaders.UserAgent = parts[1]
 		case "Accept":
 			requestHeaders.Accept = parts[1]
+		case "Accept-Encoding":
+			requestHeaders.AcceptEncoding = parts[1]
 		case "Content-Length":
 			requestHeaders.ContentLength, _ = strconv.Atoi(parts[1])
 		case "Content-Type":
 			requestHeaders.ContentType = parts[1]
+		case "Host":
+			requestHeaders.Host = parts[1]
+		case "User-Agent":
+			requestHeaders.UserAgent = parts[1]
 		}
 	}
 	return requestHeaders
