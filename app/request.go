@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"slices"
 	"strconv"
 	"strings"
 )
@@ -26,6 +27,14 @@ type Request struct {
 	Headers RequestHeaders
 }
 
+func getValidEncoding(encoding string) (string, bool) {
+	encodings := strings.Split(encoding, ", ")
+	if slices.Contains(encodings, "gzip") {
+		return "gzip", true
+	}
+	return "", false
+}
+
 func parseHeaders(headers []string) RequestHeaders {
 	requestHeaders := RequestHeaders{}
 	for _, header := range headers {
@@ -34,7 +43,10 @@ func parseHeaders(headers []string) RequestHeaders {
 		case "Accept":
 			requestHeaders.Accept = parts[1]
 		case "Accept-Encoding":
-			requestHeaders.AcceptEncoding = parts[1]
+			encoding, isAvailable := getValidEncoding(parts[1])
+			if isAvailable {
+				requestHeaders.AcceptEncoding = encoding
+			}
 		case "Content-Length":
 			requestHeaders.ContentLength, _ = strconv.Atoi(parts[1])
 		case "Content-Type":
