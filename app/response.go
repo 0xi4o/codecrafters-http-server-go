@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
 	"net/http"
 	"os"
@@ -14,10 +16,19 @@ type ResponseHeaders struct {
 }
 
 type Response struct {
-	Version string
-	Status  string
-	Headers ResponseHeaders
-	Body    string
+	Version        string
+	Status         string
+	Headers        ResponseHeaders
+	Body           string
+	CompressedBody []byte
+}
+
+func compressBody(body string) []byte {
+	var buf bytes.Buffer
+	zw := gzip.NewWriter(&buf)
+	zw.Write([]byte(body))
+	zw.Close()
+	return buf.Bytes()
 }
 
 func SerializeResponse(request Request, flags map[string]string) string {
@@ -34,8 +45,10 @@ func SerializeResponse(request Request, flags map[string]string) string {
 			Body:    body,
 		}
 		if request.Headers.AcceptEncoding == "gzip" {
+			response.CompressedBody = compressBody(body)
 			response.Headers.ContentEncoding = request.Headers.AcceptEncoding
-			return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
+			response.Headers.ContentLength = len(response.CompressedBody)
+			return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.CompressedBody)
 		}
 		return fmt.Sprintf("%s %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
 	}
@@ -67,8 +80,10 @@ func SerializeResponse(request Request, flags map[string]string) string {
 				Body:    body,
 			}
 			if request.Headers.AcceptEncoding == "gzip" {
+				response.CompressedBody = compressBody(body)
 				response.Headers.ContentEncoding = request.Headers.AcceptEncoding
-				return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
+				response.Headers.ContentLength = len(response.CompressedBody)
+				return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.CompressedBody)
 			}
 			return fmt.Sprintf("%s %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
 		case http.MethodPost:
@@ -94,8 +109,10 @@ func SerializeResponse(request Request, flags map[string]string) string {
 			Body:    body,
 		}
 		if request.Headers.AcceptEncoding == "gzip" {
+			response.CompressedBody = compressBody(body)
 			response.Headers.ContentEncoding = request.Headers.AcceptEncoding
-			return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
+			response.Headers.ContentLength = len(response.CompressedBody)
+			return fmt.Sprintf("%s %s%sContent-Encoding: %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentEncoding, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.CompressedBody)
 		}
 		return fmt.Sprintf("%s %s%sContent-Type: %s%sContent-Length: %d%s%s%s", response.Version, response.Status, CRLF, response.Headers.ContentType, CRLF, response.Headers.ContentLength, CRLF, CRLF, response.Body)
 	}
